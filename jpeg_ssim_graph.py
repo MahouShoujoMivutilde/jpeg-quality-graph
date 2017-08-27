@@ -16,8 +16,12 @@ def get_args():
     requiredNamed.add_argument("-i", required = True, help = "Путь к исходному изображению")
     return parser.parse_args()
 
-def to_jpeg(q, base, dst):
-    base.convert('RGB').save(r'{}\{}.jpeg'.format(dst, q), quality = q)
+def to_jpeg(q, base_path, dst):
+    try:
+        with Image.open(base_path) as base:
+            base.convert('RGB').save(r'{}\{}.jpeg'.format(dst, q), quality = q)
+    except:
+        pass
 
 def get_jpegs(folder):
     return [path.join(folder, i) for i in listdir(folder) if '.jpeg' in i]
@@ -30,8 +34,7 @@ def get_ssim(ref_img, cmp_img):
     return float(re.search(r'\bAll:(\d+(?:\.\d+)?)\s', outs.decode('utf-8')).group(0)[4:])
 
 def meh(a, b):
-    s = get_ssim(b, a)
-    return s
+    return get_ssim(b, a)
 
 def filter(ox, oy):
     fuchsia = []
@@ -67,11 +70,13 @@ def draw2(ox, oy, name, tp, new_alg):
 
 def process(base_path, new_alg, store = False):
     folder = path.splitext(base_path)[0]
-    makedirs(folder)
+    try:
+        makedirs(folder)
+    except FileExistsError:
+        pass        
     print('генерируем jpeg...')
-    with Image.open(base_path) as base:
-        with Pool() as pool:
-            pool.map(partial(to_jpeg, base = base, dst = folder), [q for q in range(1, 101)])   
+    with Pool() as pool:
+        pool.map(partial(to_jpeg, base_path = base_path, dst = folder), range(1, 101))
     jpegs = get_jpegs(folder)
     print('рассчитываем SSIM...')
     with Pool() as pool:
