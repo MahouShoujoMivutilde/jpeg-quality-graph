@@ -9,7 +9,7 @@ import subprocess
 import re
 
 def get_args():
-    parser = argparse.ArgumentParser(description = "Строит график зависимости SSIM от % качества jpeg, требудет matplotlib и Pillow, а также ffmpeg 3.x в PATH")
+    parser = argparse.ArgumentParser(description = "Строит график зависимости SSIM и размера файла от % качества jpeg, требудет matplotlib и Pillow, а также ffmpeg 3.x в PATH")
     parser.add_argument("-s", default = False, action = "store_true", help = "Не удалять папку с полученными jpeg")
     parser.add_argument("-p", default = False, action = "store_true", help = "Подписать соответствующие розовым линиям отметки на OY")
     requiredNamed = parser.add_argument_group("required named arguments")
