@@ -1,4 +1,4 @@
-### Скрипт построения графиков размера и SSIM в зависимости от % качества качества jpeg
+### Скрипт построения графиков размера и SSIM/PSNR в зависимости от % качества jpeg
 ---
 #### Требования
 * `python 3.4+ `
@@ -8,10 +8,10 @@
 
 #### Использование
 ```
-usage: jpeg_ssim_graph.py [-h] [-s] [-p] -i I
+usage: jpeg_graph.py [-h] [-s] [-p] -i I
 
-Строит график зависимости SSIM от % качества jpeg, требудет matplotlib и
-Pillow, а также ffmpeg 3.x в PATH
+Строит график зависимости объективного качества (PSNR/SSIM) и размера файла от
+% качества jpeg, требудет matplotlib и Pillow, а также ffmpeg 3.x в PATH
 
 optional arguments:
   -h, --help  show this help message and exit

@@ -9,7 +9,7 @@ import subprocess
 import re
 
 def get_args():
-    parser = argparse.ArgumentParser(description = "Строит график зависимости SSIM и размера файла от % качества jpeg, требудет matplotlib и Pillow, а также ffmpeg 3.x в PATH")
+    parser = argparse.ArgumentParser(description = "Строит график зависимости объективного качества (PSNR/SSIM) и размера файла от % качества jpeg, требудет matplotlib и Pillow, а также ffmpeg 3.x в PATH")
     parser.add_argument("-s", default = False, action = "store_true", help = "Не удалять папку с полученными jpeg")
     parser.add_argument("-p", default = False, action = "store_true", help = "Подписать соответствующие розовым линиям отметки на OY")
     requiredNamed = parser.add_argument_group("required named arguments")
@@ -26,15 +26,17 @@ def to_jpeg(q, base_path, dst):
 def get_jpegs(folder):
     return [path.join(folder, i) for i in listdir(folder) if '.jpeg' in i]
 
-# https://github.com/MahouShoujoMivutilde/ffmpeg_ssim
-def get_ssim(ref_img, cmp_img):
-    p = subprocess.Popen(['ffmpeg.exe', '-loglevel', 'error', '-i', ref_img, '-i', cmp_img, '-filter_complex', 'ssim=stats_file=-', '-f', 'null', '-'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+# https://github.com/MahouShoujoMivutilde/compare_images
+def compare_images(ref_img, cmp_img, method = 'psnr'): # ref и cmp можно менять местами, порядок не принципиален
+    p = subprocess.Popen(['ffmpeg.exe', '-loglevel', 'error', '-i', ref_img, '-i', cmp_img, '-filter_complex', '{}=stats_file=-'.format(method), '-f', 'null', '-'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     p.wait()
     outs, _ = p.communicate()
-    return float(re.search(r'\bAll:(\d+(?:\.\d+)?)\s', outs.decode('utf-8')).group(0)[4:])
-
-def meh(a, b):
-    return get_ssim(b, a)
+    if method == 'ssim':
+        return float(re.search(r'\bAll:(\d+(?:\.\d+)?)\s', outs.decode('utf-8')).group(0)[4:])
+    elif method == 'psnr':
+        return float(re.search(r'\bpsnr_avg:[-+]?[0-9]*\.?[0-9]+', outs.decode('utf-8')).group(0)[9:])
+    else:
+        raise Exception('RegExp to match "{}" value not implemented yet, sorry...'.format(method))
 
 def filter(ox, oy):
     fuchsia = []
@@ -73,17 +75,25 @@ def process(base_path, new_alg, store = False):
     try:
         makedirs(folder)
     except FileExistsError:
-        pass        
+        pass
+
     print('генерируем jpeg...')
     with Pool() as pool:
         pool.map(partial(to_jpeg, base_path = base_path, dst = folder), range(1, 101))
     jpegs = get_jpegs(folder)
+
     print('рассчитываем SSIM...')
     with Pool() as pool:
-        ssims = pool.map(partial(meh, b = base_path), jpegs)
-    ox = [int(path.split(i)[1].split('.')[0]) for i in jpegs]
+        SSIMs = pool.map(partial(compare_images, cmp_img = base_path, method = 'ssim'), jpegs)
+
+    print('рассчитываем PSNR...')
+    with Pool() as pool:
+        PSNRs = pool.map(partial(compare_images, cmp_img = base_path, method = 'psnr'), jpegs)
+
     print('рисуем графики...')
-    draw2(ox, ssims, folder, 'SSIM', new_alg)
+    ox = [int(path.split(i)[1].split('.')[0]) for i in jpegs]
+    draw2(ox, SSIMs, folder, 'SSIM', new_alg)
+    draw2(ox, PSNRs, folder, 'PSNR', new_alg)
     draw2(ox, [path.getsize(i)/1024 for i in jpegs], folder, 'размер, kb', new_alg)
     if not store:
         rmtree(folder)
