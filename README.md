@@ -23,5 +23,6 @@ required named arguments:
 ```
 
 #### Пример результата
-![](https://i.imgur.com/JcJWvSF.png)
-![](https://i.imgur.com/uMBll66.png)
+![](https://i.imgur.com/SRgyHox.png)
+![](https://i.imgur.com/AD6Mp89.png)
+![](https://i.imgur.com/juVizaR.png)
