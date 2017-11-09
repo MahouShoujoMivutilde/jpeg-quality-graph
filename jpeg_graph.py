@@ -99,5 +99,5 @@ def process(base_path, new_alg, store = False):
         rmtree(folder)
 
 if __name__ == '__main__':
-    args = vars(get_args())
-    process(args['i'], args['p'], store = args['s'])
+    args = get_args()
+    process(args.i, args.p, args.s)
