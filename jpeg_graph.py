@@ -4,6 +4,9 @@ from functools import partial
 from os import listdir, path, makedirs
 import matplotlib.pyplot as plt
 from shutil import rmtree
+from time import clock
+from datetime import timedelta
+from sys import argv
 import argparse 
 import subprocess 
 import re
@@ -149,6 +152,7 @@ if __name__ == '__main__':
     else:
         raise Exception('{} не папка и не файл!\nЖизнь меня к такому не готовила!'.format(args.i))
     
+    start = clock()
     stats = []
     for count, img in enumerate(source_imgs):
         if len(source_imgs) > 1:
@@ -169,8 +173,10 @@ if __name__ == '__main__':
     if not path.isdir(args.i):
         name = path.splitext(name)[0]
 
-    print('{}\n  рисуем графики'.format('-'*55))
+    print('\n  рисуем графики...\n')
 
     draw2(ox1, SSIMs, graph_dst, name, 'SSIM', args.p)
     draw2(ox2, PSNRs, graph_dst, name, 'PSNR', args.p)
     draw2(ox3, sizes, graph_dst, name, 'размер, kb', args.p)
+
+    print('%s: %s\n' % (path.split(argv[0])[1], str(timedelta(seconds = round(clock() - start)))))
