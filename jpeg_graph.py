@@ -13,7 +13,6 @@ import re
 
 supported = ['.jpg', '.jpeg', '.gif', '.png', '.webp', '.tif']
 
-
 def get_args():
     parser = argparse.ArgumentParser(description = "Строит график зависимости объективного качества (PSNR/SSIM) и размера файла от % качества jpeg, требует matplotlib, Pillow и опционально psutil, а также ffmpeg 3.x в PATH")
     parser.add_argument("-s", default = False, action = "store_true", help = "Не удалять папку с полученными jpeg")
@@ -22,52 +21,42 @@ def get_args():
     requiredNamed.add_argument("-i", required = True, help = "Путь к исходному изображению / к папке с исходными изображениями (для расчета усредненного графика)")
     return parser.parse_args()
 
-
 def to_jpeg(q, base_path, dst):
-    try:
-        with Image.open(base_path) as base:
-            base.convert('RGB').save(r'{}\{}.jpeg'.format(dst, q), quality = q)
-    except:
-        pass
-
+    with Image.open(base_path) as base:
+        base.convert('RGB').save(r'{}\{}.jpeg'.format(dst, q), quality = q)
 
 def get_imgs(folder, fmt = ''):
     return [path.abspath(path.join(folder, i)) for i in listdir(folder) if ('.{}'.format(fmt) in i and path.splitext(i)[1] in supported)]
 
-
 # https://github.com/MahouShoujoMivutilde/compare_images
-def compare_images(ref_img, cmp_img, method = 'psnr'): # ref и cmp можно менять местами, порядок не принципиален
+def compare_images(ref_img, cmp_img, method):
     p = subprocess.Popen(['ffmpeg.exe', '-loglevel', 'error', '-i', ref_img, '-i', cmp_img, '-filter_complex', '{}=stats_file=-'.format(method), '-f', 'null', '-'], stdout = subprocess.PIPE, stderr = subprocess.PIPE)
     p.wait()
     outs, _ = p.communicate()
-    if method == 'ssim':
+    if re.match("ssim", method, re.IGNORECASE):
         return float(re.search(r'\bAll:(\d+(?:\.\d+)?)\s', outs.decode('utf-8')).group(0)[4:])
-    elif method == 'psnr':
+    elif re.match("psnr", method, re.IGNORECASE):
         return float(re.search(r'\bpsnr_avg:[-+]?[0-9]*\.?[0-9]+', outs.decode('utf-8')).group(0)[9:])
     else:
         raise Exception('RegExp to match "{}" value not implemented yet, sorry...'.format(method))
 
-
-def filter(ox, oy):
-    fuchsia = []
-    k = []
-    for x, y in zip(ox, oy):
-        if x % 5 == 0:
-            fuchsia.append((x, y))
-        else:
-            k.append((x, y))
-    return(fuchsia, k)
-
-
-def extract_x(lst):
-    return list(zip(*lst))[0]
-
-
-def extract_y(lst):
-    return list(zip(*lst))[1]
-
-
 def draw2(ox, oy, fp, name, tp, new_alg):
+    def extract_x(lst):
+        return list(zip(*lst))[0]
+    
+    def extract_y(lst):
+        return list(zip(*lst))[1]
+    
+    def filter(ox, oy):
+        fuchsia = []
+        k = []
+        for x, y in zip(ox, oy):
+            if x % 5 == 0:
+                fuchsia.append((x, y))
+            else:
+                k.append((x, y))
+        return(fuchsia, k)
+    
     min_size = min(oy)
     plt.subplots(figsize = (10, 10))
     plt.plot(ox, oy, 'ro', markersize = 2)
@@ -82,7 +71,6 @@ def draw2(ox, oy, fp, name, tp, new_alg):
     plt.tight_layout()
     plt.savefig(path.join(fp, '{} - {} graph.png'.format(name, tp)), dpi = 200)
 
-
 def lower_child_priority():
     try:
         from psutil import Process, BELOW_NORMAL_PRIORITY_CLASS
@@ -93,35 +81,39 @@ def lower_child_priority():
     except:
         pass
 
-
 def process(base_path, store, quality_range = range(1, 101)):
     folder = path.splitext(base_path)[0]
     try:
         makedirs(folder)
     except FileExistsError:
         pass
+    try:
+        print('  генерируем jpeg...')
+        with Pool() as pool:
+            lower_child_priority()
+            pool.map(partial(to_jpeg, base_path = base_path, dst = folder), quality_range)
+        jpegs = get_imgs(folder, 'jpeg')
 
-    print('  генерируем jpeg...')
-    with Pool() as pool:
-        lower_child_priority()
-        pool.map(partial(to_jpeg, base_path = base_path, dst = folder), quality_range)
-    jpegs = get_imgs(folder, 'jpeg')
+        print('  рассчитываем SSIM...')
+        with Pool() as pool:
+            lower_child_priority()
+            SSIMs = pool.map(partial(compare_images, cmp_img = base_path, method = 'ssim'), jpegs)
 
-    print('  рассчитываем SSIM...')
-    with Pool() as pool:
-        lower_child_priority()
-        SSIMs = pool.map(partial(compare_images, cmp_img = base_path, method = 'ssim'), jpegs)
+        print('  рассчитываем PSNR...')
+        with Pool() as pool:
+            lower_child_priority()
+            PSNRs = pool.map(partial(compare_images, cmp_img = base_path, method = 'psnr'), jpegs)
 
-    print('  рассчитываем PSNR...')
-    with Pool() as pool:
-        lower_child_priority()
-        PSNRs = pool.map(partial(compare_images, cmp_img = base_path, method = 'psnr'), jpegs)
-
-    ox = [int(path.split(i)[1].split('.')[0]) for i in jpegs]
-    sizes = [path.getsize(i)/1024 for i in jpegs]
+        ox = [int(path.split(i)[1].split('.')[0]) for i in jpegs] # нужно чтобы сохранить порядок соотношения xi к yi
+        sizes = [path.getsize(i)/1024 for i in jpegs]
+    except Exception as e:
+        print('  файл пропущен: {}'.format(e))
 
     if not store:
-        rmtree(folder)
+        try:
+            rmtree(folder)
+        except:
+            pass
 
     try:
         assert len(ox) == len(SSIMs) == len(PSNRs) == len(sizes)
@@ -131,7 +123,6 @@ def process(base_path, store, quality_range = range(1, 101)):
     except:
         pass
 
-
 def get_avg(atype, stats):
     ox = []
     oy = []
@@ -140,7 +131,6 @@ def get_avg(atype, stats):
         ox.append(k)
         oy.append(sum(arr)/len(arr))
     return(ox, oy)
-
 
 if __name__ == '__main__':
     args = get_args()
