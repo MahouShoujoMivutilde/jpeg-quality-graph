@@ -7,6 +7,8 @@
 * * `psutil` (опционально, нужен для понижения приоритета дочерним процессам при обработке)
 * `ffmpeg 3.x` в `PATH`
 
+_[Стабильная версия](https://github.com/MahouShoujoMivutilde/jpeg-quality-graph/releases/latest)_
+
 #### Использование
 ```
 usage: jpeg_graph.py [-h] [-s] [-p] -i I
