@@ -40,7 +40,8 @@ def compare_images(ref_img, cmp_img, method):
     else:
         raise Exception('RegExp to match "{}" value not implemented yet, sorry...'.format(method))
 
-def draw2(ox, oy, fp, name, tp, new_alg):
+def draw2(ox, oy, fp, name, test_method, new_alg, format_quality):
+    # TODO: сделать адекватный (не всегда 24) вывод значений oy
     def extract_x(lst):
         return list(zip(*lst))[0]
     
@@ -57,19 +58,19 @@ def draw2(ox, oy, fp, name, tp, new_alg):
                 k.append((x, y))
         return(fuchsia, k)
     
-    min_size = min(oy)
     plt.subplots(figsize = (10, 10))
     plt.plot(ox, oy, 'ro', markersize = 2)
     f, k = filter(ox, oy)
     plt.vlines(extract_x(k), [0], extract_y(k), lw = 0.5)
     plt.vlines(extract_x(f), [0], extract_y(f), lw = 0.5, color = 'fuchsia')
-    plt.xticks(range(0, 101, 5))
-    plt.yticks(extract_y(f) if new_alg else [round(min_size + i*(max(oy) - min_size)/24, 4) for i in range(0, 24)] + [max(oy)])
-    plt.axis([1, 100, min_size, max(oy)])
-    plt.xlabel('jpeg качество, %')
-    plt.ylabel(tp)
+    plt.xticks(range(min(ox) - 1, max(ox) + 1, 5))
+    plt.yticks(extract_y(f) if new_alg else [round(min(oy) + i*(max(oy) - min(oy))/24, 4) for i in range(0, 24)] + [max(oy)])
+    quality_step = sorted(ox)[1] - sorted(ox)[0] 
+    plt.axis([min(ox) - quality_step, max(ox) + quality_step, min(oy), max(oy)])
+    plt.xlabel(format_quality)
+    plt.ylabel(test_method)
     plt.tight_layout()
-    plt.savefig(path.join(fp, '{} - {} graph.png'.format(name, tp)), dpi = 200)
+    plt.savefig(path.join(fp, '{} - {} graph.png'.format(name, test_method)), dpi = 200)
 
 def lower_child_priority():
     try:
@@ -165,8 +166,8 @@ if __name__ == '__main__':
 
     print('\n  рисуем графики...\n')
 
-    draw2(ox1, SSIMs, graph_dst, name, 'SSIM', args.p)
-    draw2(ox2, PSNRs, graph_dst, name, 'PSNR', args.p)
-    draw2(ox3, sizes, graph_dst, name, 'размер, kb', args.p)
+    draw2(ox1, SSIMs, graph_dst, name, 'SSIM', args.p, 'jpeg качество, %')
+    draw2(ox2, PSNRs, graph_dst, name, 'PSNR', args.p, 'jpeg качество, %')
+    draw2(ox3, sizes, graph_dst, name, 'размер, kb', args.p, 'jpeg качество, %')
 
     print('%s: %s\n' % (path.split(argv[0])[1], str(timedelta(seconds = round(clock() - start)))))
