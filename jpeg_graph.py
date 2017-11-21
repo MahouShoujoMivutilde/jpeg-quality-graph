@@ -1,5 +1,5 @@
 from PIL import Image
-from multiprocessing import Pool
+from multiprocessing import Pool, freeze_support
 from functools import partial
 from os import listdir, path, makedirs
 import matplotlib.pyplot as plt
@@ -134,6 +134,7 @@ def get_avg(atype, stats):
     return(ox, oy)
 
 if __name__ == '__main__':
+    freeze_support()
     args = get_args()
     source_imgs = []
     if path.isdir(args.i):

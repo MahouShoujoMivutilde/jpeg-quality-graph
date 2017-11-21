@@ -2,9 +2,9 @@
 ---
 #### Требования
 * `python 3.4+ `
-* * `matplotlib`
-* * `pillow`
-* * `psutil` (опционально, нужен для понижения приоритета дочерним процессам при обработке)
+	* `matplotlib`
+	* `pillow`
+	* `psutil` (опционально, нужен для понижения приоритета дочерним процессам при обработке)
 * `ffmpeg 3.x` в `PATH`
 
 _[Стабильная версия](https://github.com/MahouShoujoMivutilde/jpeg-quality-graph/releases/latest)_
