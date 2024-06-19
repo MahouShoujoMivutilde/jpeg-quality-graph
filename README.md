@@ -38,31 +38,31 @@ required named arguments:
 
 ##### PNG изображения в аниме-стиле
 
-![](https://i.imgur.com/Ra7mAk0.png)
+![](graphs/png-anime-psnr.png)
 
-![](https://i.imgur.com/Tua6jCb.png)
+![](graphs/png-anime-ssim.png)
 
-![](https://i.imgur.com/6CP0f4q.png)
+![](graphs/png-anime-size.png)
 
 ---
 
 ##### JPEG фото с качеством 100%, отрендеренные из raw
 
-![](https://i.imgur.com/nIHYHf0.png)
+![](graphs/jpeg-100-photo-psnr.png)
 
-![](https://i.imgur.com/la6bSf1.png)
+![](graphs/jpeg-100-photo-ssim.png)
 
-![](https://i.imgur.com/h8hwiGx.png)
+![](graphs/jpeg-100-photo-size.png)
 
 ---
 
 ##### TIFF фото, сжатие без потерь, отрендеренные из raw
 
-![](https://i.imgur.com/SFWbNUZ.png)
+![](graphs/tiff-lossless-psnr.png)
 
-![](https://i.imgur.com/nOUxtQH.png)
+![](graphs/tiff-lossless-ssim.png)
 
-![](https://i.imgur.com/EIRTnDQ.png)
+![](graphs/tiff-lossless-size.png)
 
 ---
 __ps__ выборка везде 100 изображений.
